@@ -19,6 +19,36 @@ TCPNetKit::~TCPNetKit()
     delete ui;
 }
 
+// 服务器请求函数
+void TCPNetKit::onServerRequest()
+{
+
+}
+
+// 服务器响应函数
+void TCPNetKit::onServerReply(int index)
+{
+
+}
+
+// 数据处理函数
+void TCPNetKit::onDataHandle(QString data)
+{
+
+}
+
+// 上传数据函数
+void TCPNetKit::onUploadData(QString device, QString data)
+{
+
+}
+
+// 字符串转ASCII函数
+QString TCPNetKit::strToAscii(QString str)
+{
+    return "";
+}
+
 void TCPNetKit::initUi()
 {
     this->setWindowIcon(QIcon(QString(":/images/logo.ico")));
@@ -40,6 +70,30 @@ void TCPNetKit::initUi()
         ui->tableWidget_ListConnections->setItem(i, 1, address);
         ui->tableWidget_ListConnections->setRowHeight(i, 20);
     }
+}
+
+// 添加信息
+void TCPNetKit::addMessage(QString msg, int which)
+{
+
+}
+
+// 更新列表
+void TCPNetKit::updatelist(QString ip, int No, int operation)
+{
+
+}
+
+// 获取本机ip
+bool TCPNetKit::getIPAddress(const QString &hostname, QString &ipAddress)
+{
+    return false;
+}
+
+// 获取本机计算机名
+bool TCPNetKit::getLocalHostName(QString &hostname)
+{
+    return false;
 }
 
 // 开始服务按钮 clicked信号响应槽
