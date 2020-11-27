@@ -2,6 +2,7 @@
 #define TCPNETKIT_H
 
 #include <QWidget>
+#include <QMap>
 #include "tcpsocket.h"
 #include "httpsocket.h"
 
@@ -25,9 +26,11 @@ public:
     // 数据处理函数
     void onDataHandle(QString data);
     // 上传数据函数
-    void onUploadData(QString device, QString data);
+    void onUploadData(QString device, QString data);        
     // 字符串转ASCII函数
     QString strToAscii(QString str);
+    // 发送消息到客户端
+    void onSendMessageToClient(int sensorid, QString sensorip, QString message);
 
 
 private slots:
@@ -50,15 +53,17 @@ private slots:
 
 private:
     Ui::TCPNetKit *ui;
-    void initUi();// 初始化图形界面
+    void initDialog();// 初始化对话框
+
+    // 服务器定时发送消息的定时器,key:传感器标识<ip_sensorid>，
+    QMap<QString, QTimer*> timerMap;
+
 
     // 服务器套接字
     TCPSocket *socketServer;
     // 客户端套接字
     TCPSocket *socketClient;
 
-    // 添加信息
-    void addMessage(QString msg, int which);
     // 更新列表
     void updatelist(QString ip, int No, int operation);
 
@@ -73,21 +78,15 @@ private:
     // 远程服务器端口
     int remotePort;
 
-    // 当前选中的传感器
-    int currentSelect;
-
     // 服务器创建状态
     bool isServerCreated;
     // 客户端连接状态
     bool isClientConnected;
 
     // 获取本机ip
-    bool getIPAddress(const QString &hostname, QString &ipAddress);
+    QString getIPAddress(const QString &hostname);
     // 获取本机计算机名
-    bool getLocalHostName(QString &hostname);
-
-
-
+    QString getLocalHostName();
 
 
 };
