@@ -24,8 +24,8 @@ void TCPNetKit::initDialog()
 
     // TODO: Add extra initialization here
     //1.初始化变量,初始化服务端套接字和客户端套接字
-    socketServer = new TCPSocket(this);
-    socketClient = new TCPSocket(this);
+    socketServer = new TcpServer(this);
+    socketClient = new TcpClient(this);
 
     //2.获取本机的IP和计算机名
     localName = getLocalHostName();
@@ -400,19 +400,6 @@ void TCPNetKit::onDataHandle(QString data)
 
 // 上传数据函数
 void TCPNetKit::onUploadData(QString device, QString data)
-{
-
-}
-
-// 字符串转ASCII函数
-QString TCPNetKit::strToAscii(QString str)
-{
-    return "";
-}
-
-
-// 更新列表
-void TCPNetKit::updatelist(QString ip, int No, int operation)
 {
 
 }

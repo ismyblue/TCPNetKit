@@ -3,8 +3,10 @@
 
 #include <QWidget>
 #include <QMap>
-#include "tcpsocket.h"
-#include "httpsocket.h"
+#include "tcpserver.h"
+#include "tcpclient.h"
+#include "sensorhelper.h"
+#include "httpclient.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class TCPNetKit; }
@@ -60,9 +62,9 @@ private:
 
 
     // 服务器套接字
-    TCPSocket *socketServer;
+    TcpServer *socketServer;
     // 客户端套接字
-    TCPSocket *socketClient;
+    TcpClient *socketClient;
 
     // 更新列表
     void updatelist(QString ip, int No, int operation);
