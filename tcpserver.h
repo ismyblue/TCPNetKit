@@ -2,7 +2,7 @@
 #define TCPSERVER_H
 
 #include <QObject>
-#include <QList>
+#include <QMap>
 #include <QTcpServer>
 #include "tcpserverhandler.h"
 
@@ -26,21 +26,17 @@ public:
     // 开启本地服务器
     void startServer(QString LocalIP, int LocalPort);
     // 发送QString消息给某个客户端
-    void send(QString message, QString tcpClientIP);
+    void send(QString message, QString tcpClientIP, int tcpClientPort);
     // 发送QByteArray消息给谋个客户端
-    void send(QByteArray byteArray, QString tcpClientIP);
+    void send(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
     // 取消某个个客户端的连接
-    void disconnectClient(QString tcpClientIP);
+    void disconnectClient(QString tcpClientIP, int tcpClientPort);
 
 signals:
     // 信号，收到某客户端的消息 QString格式
-    void receiveMessage(QString message, QString tcpClientIP);
+    void receiveMessage(QString message, QString tcpClientIP, int tcpClientPort);
     // 信号，收到某客户端的消息 QByteArray格式
-    void receiveByteArray(QByteArray byteArray, QString tcpClientIP);
-
-private slots:
-    // 私有槽，响应准备读取消息信号，处理数据之后发送receiveString和receiveByteArray信号
-    void slotsReadyRead();
+    void receiveByteArray(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
 
 private:
     // 监听ip
@@ -50,8 +46,8 @@ private:
     // 监听状态
     bool isListen;
 
-    // “服务器处理套接字”列表, 列表中的每个套接字用来单独与客户端套接字通信
-    QList<TcpServerHandler*> handlerList;
+    // “服务器处理套接字”字典, 字典中的每个套接字用来单独与客户端套接字通信
+    QMap<QString, TcpServerHandler*> handlerMap;
 
 protected:
     // 重载incommintConnection， 生成handler，用来单独处理与每一个TcpClient的通信

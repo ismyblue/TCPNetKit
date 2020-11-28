@@ -1,6 +1,6 @@
 #include "tcpserverhandler.h"
 
-TcpServerHandler::TcpServerHandler(QObject *parent) : QObject(parent)
+TcpServerHandler::TcpServerHandler(QObject *parent) : QTcpSocket(parent)
 {
 
 }
