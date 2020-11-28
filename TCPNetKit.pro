@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -16,15 +16,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    httpsocket.cpp \
+    httpclient.cpp \
     main.cpp \
+    sensorhelper.cpp \
+    tcpclient.cpp \
     tcpnetkit.cpp \
-    tcpsocket.cpp
+    tcpserver.cpp \
+    tcpserverhandler.cpp
 
 HEADERS += \
-    httpsocket.h \
+    httpclient.h \
+    sensorhelper.h \
+    tcpclient.h \
     tcpnetkit.h \
-    tcpsocket.h
+    tcpserver.h \
+    tcpserverhandler.h
 
 FORMS += \
     tcpnetkit.ui
