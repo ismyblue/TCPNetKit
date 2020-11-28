@@ -2,9 +2,10 @@
 #define TCPSERVERHANDLER_H
 
 #include <QObject>
+#include <QTcpSocket>
 
 // TCP服务处理类，用来单独处于与某一个TcpClient的通信
-class TcpServerHandler : public QObject
+class TcpServerHandler : public QTcpSocket
 {
     Q_OBJECT
 public:
