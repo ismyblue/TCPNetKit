@@ -11,8 +11,28 @@ class TcpServerHandler : public QTcpSocket
 public:
     explicit TcpServerHandler(QObject *parent = nullptr);
 
-signals:
+    // 发送QString消息到客户端
+    void send(QString message);
+    // 发送QByteArray消息到客户端
+    void send(QByteArray byteArray);
+    // 断开与客户端的连接
+    void disconnectClient();
 
+signals:
+    // 信号，收到某客户端的消息 QString格式
+    void receiveMessage(QString message, QString tcpClientIP, int tcpClientPort);
+    // 信号，收到某客户端的消息 QByteArray格式
+    void receiveByteArray(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
+
+private slots:
+    // 私有槽，用来响应readyRead信号，处理消息，发出receiveMessage信号和receiveByteArray信号
+    void onReadyRead();
+
+private:
+    // tcp客户端的ip
+    QString tcpClientIP;
+    // tcp客户端的port
+    int tcpClientPort;
 };
 
 #endif // TCPSERVERHANDLER_H
