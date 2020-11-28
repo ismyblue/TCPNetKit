@@ -205,8 +205,7 @@ void TCPNetKit::on_pushButton_Connect_clicked()
 // server发送数据按钮 clicked信号响应槽, 发送到消息是循环发送
 void TCPNetKit::on_pushButton_ServerSend_clicked()
 {
-    // 选取传感器定时发送消息
-
+    // 定时向传感器发送消息
 
     // 获取当前传感器列表选中的行
     int currentRow = ui->tableWidget_ListConnections->currentRow();
@@ -256,24 +255,105 @@ void TCPNetKit::on_pushButton_ServerSend_clicked()
     // 启动定时器，定时发送消息
     timer->start(1000);
 
+    // 清空消息框
+    ui->textEdit_ServerSend->clear();
+
 }
 
 // 发送消息到传感器
 void TCPNetKit::onSendMessageToClient(int sensorid, QString sensorip, QString message)
 {
-    qDebug()<<sensorid<<" "<<sensorip<< " " <<message;
+    // todo...
+    // socketServer->send(sensorip, message);
+
+    // 更新服务器日志
+    QString sensor_key = QString("%1_%2").arg(sensorip).arg(sensorid);
+    ui->textEdit_ServerLog->append(QString("向%1发送:%2").arg(sensor_key).arg(message));
+
 }
 
-
-// 断开连接按钮 clicked信号响应槽
-void TCPNetKit::on_pushButton_ServerDisconnect_clicked()
-{
-
-}
-
-// 取消发送按钮 clicked信号响应槽
+// 取消发送消息到传感器 clicked信号响应槽
 void TCPNetKit::on_pushButton_CancerServerSend_clicked()
 {
+    // 获取当前传感器列表选中的行
+    int currentRow = ui->tableWidget_ListConnections->currentRow();
+    // 如果没有选中传感器，那么提示，然后返回
+    if(currentRow < 0 || currentRow >= ui->tableWidget_ListConnections->rowCount())
+    {
+        QMessageBox::warning(this, tr("Error"), tr("Please select a sensor!"));
+        return ;
+    }
+
+    bool ok;
+    // 获取传感器id
+    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
+    // 获取传感器ip
+    QString sensorip = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+    // 计算传感器标识
+    QString sensor_key = QString("%1_%2").arg(sensorip).arg(sensorid);
+
+    // 如果存在定时器，那么删除此定时器
+    if(timerMap.contains(sensor_key))
+    {
+        // 从定时器中删除
+        QTimer *timer = timerMap.value(sensor_key);
+        // 删除信号槽连接
+        timer->disconnect();
+        // 释放指针所指内存
+        delete timer;
+        // 定时器列表移出元素
+        timerMap.remove(sensor_key);
+    }
+
+}
+
+
+// 断开传感器连接按钮 clicked信号响应槽
+void TCPNetKit::on_pushButton_ServerDisconnect_clicked()
+{
+    // 获取当前传感器列表选中的行
+    int currentRow = ui->tableWidget_ListConnections->currentRow();
+    // 如果没有选中传感器，那么提示，然后返回
+    if(currentRow < 0 || currentRow >= ui->tableWidget_ListConnections->rowCount())
+    {
+        QMessageBox::warning(this, tr("Error"), tr("Please select a sensor!"));
+        return ;
+    }
+
+    bool ok;
+    // 获取传感器id
+    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
+    // 获取传感器ip
+    QString sensorip = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+    // 计算传感器标识
+    QString sensor_key = QString("%1_%2").arg(sensorip).arg(sensorid);
+
+    // 先删除这个向这个传感器发送消息的定时器，然后断开连接
+    // 如果存在定时器，那么删除此定时器
+    if(timerMap.contains(sensor_key))
+    {
+        // 从定时器中删除
+        QTimer *timer = timerMap.value(sensor_key);
+        // 删除信号槽连接
+        timer->disconnect();
+        // 释放指针所指内存
+        delete timer;
+        // 定时器列表移出元素
+        timerMap.remove(sensor_key);
+    }
+
+    // 断开这个传感器的连接
+    // todo...
+    // socketServer->disconnect(sensor_id, sensor_ip);
+
+    // 从传感器列表删除此传感器
+    ui->tableWidget_ListConnections->removeRow(currentRow);
+
+    // 更新服务器日志
+    ui->textEdit_ServerLog->append(QString("手工断开%1的连接").arg(sensor_key));
+
+
+
 
 }
 
@@ -281,7 +361,22 @@ void TCPNetKit::on_pushButton_CancerServerSend_clicked()
 // client发送数据按钮 clicked信号响应槽
 void TCPNetKit::on_pushButton_ClientSend_clicked()
 {
-
+    // 在连接了服务器的情况下
+    if(isClientConnected)
+    {
+        // 获取消息框消息
+        QString message = ui->textEdit_Send->toPlainText();
+        if(message != "")
+        {
+            // 客户端套接字发送消息
+            // todo...
+            // socketClient->send(message);
+            // 更新客户端日志
+            ui->textEdit_ClientLog->append(QString("向%1发送:%2").arg(remoteIP).arg(message));
+            // 清除消息框消息
+//            ui->textEdit_Send->clear();
+        }
+    }
 }
 
 
