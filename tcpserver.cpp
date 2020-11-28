@@ -102,6 +102,8 @@ void TcpServer::disconnectClient(QString tcpClientIP, int tcpClientPort)
     if(handlerMap.contains(handler_key))
     {
         TcpServerHandler *handler = handlerMap.value(handler_key);
+        // 断开客户端连接
+        handler->disconnectClient();
         // 删除信号槽连接
         handler->disconnect();
         // 释放资源
