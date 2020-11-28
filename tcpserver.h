@@ -3,10 +3,11 @@
 
 #include <QObject>
 #include <QList>
+#include <QTcpServer>
 #include "tcpserverhandler.h"
 
 // TCP服务端类，用来启动TCP监听服务
-class TcpServer : public QObject
+class TcpServer : public QTcpServer
 {
     Q_OBJECT
 public:
