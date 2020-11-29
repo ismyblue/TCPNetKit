@@ -64,6 +64,55 @@ void TcpServer::startServer(QString localIP, int localPort)
 
 }
 
+// 停止服务器
+void TcpServer::stopServer()
+{
+    // 关闭所有handler, 并删除
+    QMap<QString, TcpServerHandler*>::iterator i;
+    for(i = handlerMap.begin();i != handlerMap.end();)
+    {
+        // 获得key
+        QString handler_key = i.key();
+        // 获得value
+        TcpServerHandler *handler = i.value();
+        i++;
+        // 关闭客户端连接
+        handler->disconnectClient();
+        // 释放内存
+        delete handler;
+        // 从map中删除
+        handlerMap.remove(handler_key);
+    }
+    // 停止服务端套接字监听
+    this->close();
+}
+
+// 发送String消息到所有客户端
+void TcpServer::send(QString message)
+{
+    // 遍历所有hanlder,分别发送
+    QMap<QString, TcpServerHandler*>::iterator iter;
+    for(iter = handlerMap.begin();iter != handlerMap.end();iter++)
+    {
+        TcpServerHandler *handler = iter.value();
+        // 发送消息
+        handler->send(message);
+    }
+}
+
+// 发送ByteArray消息到所有客户端
+void TcpServer::send(QByteArray byteArray)
+{
+    // 遍历所有hanlder,分别发送
+    QMap<QString, TcpServerHandler*>::iterator iter;
+    for(iter = handlerMap.begin();iter != handlerMap.end();iter++)
+    {
+        TcpServerHandler *handler = iter.value();
+        // 发送消息
+        handler->send(byteArray);
+    }
+}
+
 // 发送QString消息给某个客户端
 void TcpServer::send(QString message, QString tcpClientIP, int tcpClientPort)
 {
@@ -132,7 +181,7 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
         // 信号连接信号，发送收到消息信号，
         //void receiveMessage(QString message, QString tcpClientIP, int tcpClientPort);
         //void receiveByteArray(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
-        connect(handler, SIGNAL(receiveMessage(QString, QString, int)), this, SIGNAL(receiveMessage(QString, QString, int)));
+        connect(handler, SIGNAL(receiveString(QString, QString, int)), this, SIGNAL(receiveString(QString, QString, int)));
         connect(handler, SIGNAL(receiveByteArray(QByteArray, QString, int)), this, SIGNAL(receiveByteArray(QByteArray, QString, int)));
     }
 
