@@ -25,16 +25,24 @@ public:
     void startServer();
     // 开启本地服务器
     void startServer(QString LocalIP, int LocalPort);
+    // 停止服务器
+    void stopServer();
+
+    // 发送QString消息给所有客户端
+    void send(QString message);
+    // 发送QByteArray消息给所有客户端
+    void send(QByteArray byteArray);
     // 发送QString消息给某个客户端
     void send(QString message, QString tcpClientIP, int tcpClientPort);
-    // 发送QByteArray消息给谋个客户端
+    // 发送QByteArray消息给某个客户端
     void send(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
     // 取消某个个客户端的连接
     void disconnectClient(QString tcpClientIP, int tcpClientPort);
 
+
 signals:
     // 信号，收到某客户端的消息 QString格式
-    void receiveMessage(QString message, QString tcpClientIP, int tcpClientPort);
+    void receiveString(QString message, QString tcpClientIP, int tcpClientPort);
     // 信号，收到某客户端的消息 QByteArray格式
     void receiveByteArray(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
 
