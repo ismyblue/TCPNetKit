@@ -33,6 +33,7 @@ void TCPNetKit::initDialog()
     connect(tcpServer, SIGNAL(receiveString(QString, QString, int)), this, SLOT(onServerReceiveString(QString, QString, int)));
     // tcpClient的信号槽
     connect(tcpClient, SIGNAL(receiveString(QString)), this, SLOT(onClientReceiveString(QString)));
+    connect(tcpClient, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onClientStateChanged(QAbstractSocket::SocketState)));
 
 
 
@@ -219,14 +220,8 @@ void TCPNetKit::on_pushButton_Connect_clicked()
             return ;
         }
 
-        // 修改客户端连接状态为已连接
-        isClientConnected = true;
         // 修改按钮文本
-        ui->pushButton_Connect->setText(tr("断开连接"));
-
-        // 更新客户端日志
-        QString status = remoteIP + "连接";
-        ui->textEdit_ClientLog->append(status);
+        ui->pushButton_Connect->setText(tr("连接中..."));
 
     }
     else
@@ -234,8 +229,7 @@ void TCPNetKit::on_pushButton_Connect_clicked()
         // 客户端套接字断开连接        
         // todo....
         tcpClient->disconnectServer();
-        // 修改客户端连接状态为false
-        isClientConnected = false;
+
         // 设置连接按钮文本为“连接”
         ui->pushButton_Connect->setText(tr("连接"));
     }
@@ -427,9 +421,34 @@ void TCPNetKit::onClientReceiveString(QString message)
     ui->textEdit_ClientLog->append(message);
 }
 
+// 响应服务端收到消息
 void TCPNetKit::onServerReceiveString(QString message, QString tcpClientIP, int tcpClientPort)
 {
     ui->textEdit_ServerLog->append(QString("收到%1:%2信息:%3").arg(tcpClientIP).arg(tcpClientPort).arg(message));
+}
+
+// 响应客户端状态改变
+void TCPNetKit::onClientStateChanged(QAbstractSocket::SocketState socketState)
+{
+    // 套接字连接成功
+    if(QAbstractSocket::ConnectedState == socketState)
+    {
+        ui->pushButton_Connect->setText(QString("断开连接"));
+        // 更新客户端日志
+        QString status = remoteIP + "连接";
+        ui->textEdit_ClientLog->append(status);
+        isClientConnected = true;
+    }
+    else if(QAbstractSocket::UnconnectedState == socketState)
+    {
+        ui->pushButton_Connect->setText(QString("连接"));
+        isClientConnected = false;
+    }
+    else if(QAbstractSocket::ConnectingState == socketState)
+    {
+        ui->pushButton_Connect->setText(QString("连接中..."));
+    }
+
 }
 
 

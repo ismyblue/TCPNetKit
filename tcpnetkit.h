@@ -88,6 +88,10 @@ private slots:
     // 服务端收到消息
     void onServerReceiveString(QString message, QString tcpClientIP, int tcpClientPort);
 
+    // 响应客户端状态改变
+    void onClientStateChanged(QAbstractSocket::SocketState socketState);
+
+
 
 };
 #endif // TCPNETKIT_H
