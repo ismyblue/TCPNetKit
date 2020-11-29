@@ -16,9 +16,13 @@ public:
     // 发送QByteArray消息到客户端
     void send(QByteArray byteArray);
     // 断开与客户端的连接
-    void disconnectClient();
+    void disconnectClient();    
+
 
 signals:
+    // 信号，客户端主动断开
+    void clientDisconnect(QString tcpClientIp, int tcpClientPort);
+
     // 信号，收到某客户端的消息 QString格式
     void receiveString(QString message, QString tcpClientIP, int tcpClientPort);
     // 信号，收到某客户端的消息 QByteArray格式
@@ -27,14 +31,9 @@ signals:
 private slots:
     // 私有槽，用来响应readyRead信号，处理消息，发出receiveMessage信号和receiveByteArray信号
     void onReadyRead();
+    // 套接字状态改变， 响应客户端主动断开
+    void onStateChanged(QAbstractSocket::SocketState socketState);
 
-private:
-    // 是否获得客户端ip和port的标志
-    bool isHaveIPandPort;
-    // tcp客户端的ip
-    QString tcpClientIP;
-    // tcp客户端的port
-    int tcpClientPort;
 };
 
 #endif // TCPSERVERHANDLER_H
