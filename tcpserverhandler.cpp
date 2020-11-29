@@ -3,8 +3,7 @@
 
 TcpServerHandler::TcpServerHandler(QObject *parent) : QTcpSocket(parent)
 {
-    tcpClientIP = this->peerAddress().toString();
-    tcpClientPort = this->peerPort();
+    isHaveIPandPort = false;
     connect(this, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
 }
 
@@ -37,11 +36,19 @@ void TcpServerHandler::onReadyRead()
         this->read(datagram.data(), datagram.size());
         QString msg = datagram.data();
 
+        // 获取客户端ip和port
+        if(!isHaveIPandPort)
+        {
+            tcpClientIP = this->peerAddress().toString();
+            tcpClientPort = this->peerPort();
+            isHaveIPandPort = true;
+        }
+
         // 收到数据，发射信号
         // 信号，收到某客户端的消息 QByteArray格式, ip, port
         emit receiveByteArray(datagram, tcpClientIP, tcpClientPort);
         // 信号，收到某客户端的消息 QString格式, ip, port
-        emit receiveMessage(msg, tcpClientIP, tcpClientPort);
+        emit receiveString(msg, tcpClientIP, tcpClientPort);
 
     }
 }

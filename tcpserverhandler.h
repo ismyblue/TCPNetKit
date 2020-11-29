@@ -20,7 +20,7 @@ public:
 
 signals:
     // 信号，收到某客户端的消息 QString格式
-    void receiveMessage(QString message, QString tcpClientIP, int tcpClientPort);
+    void receiveString(QString message, QString tcpClientIP, int tcpClientPort);
     // 信号，收到某客户端的消息 QByteArray格式
     void receiveByteArray(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
 
@@ -29,6 +29,8 @@ private slots:
     void onReadyRead();
 
 private:
+    // 是否获得客户端ip和port的标志
+    bool isHaveIPandPort;
     // tcp客户端的ip
     QString tcpClientIP;
     // tcp客户端的port
