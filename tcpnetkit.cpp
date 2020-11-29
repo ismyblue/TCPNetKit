@@ -298,7 +298,8 @@ void TCPNetKit::onSendMessageToClient(QString message, QString tcpClientIP, int 
     tcpServer->send(message, tcpClientIP, tcpClientPort);
 
     // 更新服务器日志
-    onServerReceiveString(message, tcpClientIP, tcpClientPort);
+//    onServerReceiveString(message, tcpClientIP, tcpClientPort);
+    ui->textEdit_ServerLog->append(QString("向%1:%2发送:%3").arg(tcpClientIP).arg(tcpClientPort).arg(message));
 
 }
 
@@ -428,7 +429,7 @@ void TCPNetKit::onClientReceiveString(QString message)
 
 void TCPNetKit::onServerReceiveString(QString message, QString tcpClientIP, int tcpClientPort)
 {
-    ui->textEdit_ServerLog->append(QString("向%1:%2发送:%3").arg(tcpClientIP).arg(tcpClientPort).arg(message));
+    ui->textEdit_ServerLog->append(QString("收到%1:%2信息:%3").arg(tcpClientIP).arg(tcpClientPort).arg(message));
 }
 
 
