@@ -57,8 +57,7 @@ void TCPNetKit::initDialog()
     // 取消序号
     ui->tableWidget_ListConnections->verticalHeader()->setHidden(true);
 
-    //5.状态变量: 服务端是否创建，客户端是否连接，当前是否选中传感器
-    isServerCreated = false;
+    //5.状态变量: 客户端是否连接
     isClientConnected = false;
 
 }
@@ -130,29 +129,21 @@ void TCPNetKit::on_pushButton_StartServer_clicked()
         return ;
     }
 
-    // 如果还没创建服务器
-    if(!isServerCreated)
+    // 如果服务器没有启动
+    if(!tcpServer->isListening())
     {
         // 创建并开启服务器套接字
         // todo...
-        tcpServer->startServer(localIP, localPort);
-        // 如果创建失败
-        if(false)
+        // 如果监听失败
+        if(!tcpServer->startServer(localIP, localPort))
         {
-            QMessageBox::warning(this, tr("Fail"), tr("Server create failed"));
-            return ;
-        }
-        // 如果启动失败
-        if(false)
-        {
-            QMessageBox::information(this, tr("Fail"), tr("Server start failed"));
+            QMessageBox::warning(this, tr("Fail"), tr("Server listen failed"));
             return ;
         }
 
         // 修改按钮文本
         ui->pushButton_StartServer->setText(tr("关闭服务"));
-        // 重置服务器创建状态为已创建
-        isServerCreated = true;
+
     }
     // 如果已经创建了服务器
     else
@@ -168,8 +159,7 @@ void TCPNetKit::on_pushButton_StartServer_clicked()
         // 清空传感器列表
         for(int i = ui->tableWidget_ListConnections->rowCount() - 1;i >=0;i--)
             ui->tableWidget_ListConnections->removeRow(i);
-        // 重置服务器创建状态为未创建
-        isServerCreated = false;
+
     }
 
 }
@@ -178,6 +168,7 @@ void TCPNetKit::on_pushButton_StartServer_clicked()
 // client连接按钮 clicked信号相应槽
 void TCPNetKit::on_pushButton_Connect_clicked()
 {
+    qDebug()<<"connect click" << isClientConnected;
     // 如果客户端未连接
     if(!isClientConnected)
     {
@@ -219,9 +210,7 @@ void TCPNetKit::on_pushButton_Connect_clicked()
             tcpClient->disconnectServer();
             return ;
         }
-
-        // 修改按钮文本
-        ui->pushButton_Connect->setText(tr("连接中..."));
+        qDebug()<<"finished connectSerer";
 
     }
     else
@@ -229,9 +218,10 @@ void TCPNetKit::on_pushButton_Connect_clicked()
         // 客户端套接字断开连接        
         // todo....
         tcpClient->disconnectServer();
-
-        // 设置连接按钮文本为“连接”
-        ui->pushButton_Connect->setText(tr("连接"));
+qDebug()<<"finished disconnectServer";
+        // 由onStateChanged槽函数修改按钮文本
+//        // 设置连接按钮文本为“连接”
+//        ui->pushButton_Connect->setText(tr("连接"));
     }
 }
 
@@ -345,16 +335,11 @@ void TCPNetKit::on_pushButton_ServerDisconnect_clicked()
     // 计算传感器标识
     QString tcpClient_key = QString("%1:%2").arg(tcpClientIP).arg(tcpClientPort);
 
-    // 先删除这个向这个传感器发送消息的定时器，然后断开连接
-    // 如果存在定时器，那么删除此定时器
-    removeOneTimer(tcpClient_key);
 
     // 断开这个传感器的连接
     // todo...
     tcpServer->disconnectClient(tcpClientIP, tcpClientPort);
 
-    // 从传感器列表删除此传感器
-    ui->tableWidget_ListConnections->removeRow(currentRow);
 
     // 更新服务器日志
     ui->textEdit_ServerLog->append(QString("手工断开%1的连接").arg(tcpClient_key));
@@ -441,6 +426,7 @@ void TCPNetKit::onClientStateChanged(QAbstractSocket::SocketState socketState)
     }
     else if(QAbstractSocket::UnconnectedState == socketState)
     {
+        qDebug()<<" 客户端响应断开";
         ui->pushButton_Connect->setText(QString("连接"));
         isClientConnected = false;
     }
