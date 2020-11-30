@@ -52,8 +52,6 @@ private:
     // 远程服务器端口
     int remotePort;
 
-    // 服务器创建状态
-    bool isServerCreated;
     // 客户端连接状态
     bool isClientConnected;
 

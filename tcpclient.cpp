@@ -13,6 +13,7 @@ TcpClient::TcpClient(QObject *parent) : QTcpSocket(parent)
     isConnected = false;
     // 连接信号槽
     connect(this, SIGNAL(readyRead()), this, SLOT(slotsReadyRead()));
+    connect(this, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onClientStateChanged(QAbstractSocket::SocketState)));
 }
 
 // 获取远程IP
@@ -56,9 +57,8 @@ void TcpClient::connectServer()
     {
         QHostAddress serverAddress;
         serverAddress.setAddress(remoteIP);
-        this->connectToHost(serverAddress, remotePort);
-        // 修改连接状态
-        isConnected = true;
+        // 尝试连接
+        this->connectToHost(serverAddress, remotePort);        
     }
 }
 
@@ -102,10 +102,8 @@ void TcpClient::disconnectServer()
     // 如果已经连接
     if(isConnected)
     {
-        // 断开连接
-        this->disconnectFromHost();
-        // 修改连接状态
-        isConnected = false;
+        // 尝试断开连接
+        this->disconnectFromHost();        
     }
 
 }
@@ -123,6 +121,21 @@ void TcpClient::slotsReadyRead()
         // 收到数据，发射信号
         emit receiveByteArray(datagram);
         emit receiveString(msg);
+    }
+
+}
+
+// 响应状态改变
+void TcpClient::onClientStateChanged(QAbstractSocket::SocketState socketState)
+{
+    // 套接字连接成功
+    if(QAbstractSocket::ConnectedState == socketState)
+    {
+       isConnected = true;
+    }
+    else if(QAbstractSocket::UnconnectedState == socketState)
+    {
+       isConnected = false;
     }
 
 }

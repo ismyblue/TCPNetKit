@@ -41,28 +41,26 @@ void TcpServer::setLocalPort(int localPort)
 }
 
 // 启动服务器
-void TcpServer::startServer()
+bool TcpServer::startServer()
 {
-    if(this->isListening())
-        return ;
     QHostAddress hostAddress;
     hostAddress.setAddress(localIP);
-    this->listen(hostAddress, localPort);
+    return this->listen(hostAddress, localPort);
 }
 
 // 启动服务器
-void TcpServer::startServer(QString localIP, int localPort)
+bool TcpServer::startServer(QString localIP, int localPort)
 {
     QHostAddress hostAddress;
     if(hostAddress.setAddress(localIP))
-    {
         this->localIP = localIP;
-    }
+    else
+        return false;
     if(0 < localPort && localPort <= 65535)
-    {
         this->localPort = localPort;
-    }
-    this->listen(hostAddress, this->localPort);
+    else
+        return false;
+    return this->listen(hostAddress, this->localPort);    
 
 }
 

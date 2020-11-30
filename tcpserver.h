@@ -22,9 +22,9 @@ public:
     void setLocalPort(int LocalPort);
 
     // 开启本地服务器
-    void startServer();
+    bool startServer();
     // 开启本地服务器
-    void startServer(QString LocalIP, int LocalPort);
+    bool startServer(QString LocalIP, int LocalPort);
     // 停止服务器
     void stopServer();
 
