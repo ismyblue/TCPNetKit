@@ -3,10 +3,10 @@
 #include "tcpserverhandler.h"
 
 TcpServer::TcpServer(QObject *parent) : QTcpServer(parent)
-{
-    localIP = "0.0.0.0";
+{    
+    QHostAddress any = QHostAddress::Any;
+    localIP = any.toString();
     localPort = 8888;
-    isListen = false;
 }
 
 // 获取本地IP
@@ -41,32 +41,34 @@ void TcpServer::setLocalPort(int localPort)
 }
 
 // 启动服务器
-void TcpServer::startServer()
+bool TcpServer::startServer()
 {
     QHostAddress hostAddress;
     hostAddress.setAddress(localIP);
-    this->listen(hostAddress, localPort);
+    return this->listen(hostAddress, localPort);
 }
 
 // 启动服务器
-void TcpServer::startServer(QString localIP, int localPort)
+bool TcpServer::startServer(QString localIP, int localPort)
 {
     QHostAddress hostAddress;
     if(hostAddress.setAddress(localIP))
-    {
         this->localIP = localIP;
-    }
+    else
+        return false;
     if(0 < localPort && localPort <= 65535)
-    {
         this->localPort = localPort;
-    }
-    this->listen(hostAddress, this->localPort);
+    else
+        return false;
+    return this->listen(hostAddress, this->localPort);    
 
 }
 
 // 停止服务器
 void TcpServer::stopServer()
 {
+    if(!this->isListening())
+        return ;
     // 关闭所有handler, 并删除
     QMap<QString, TcpServerHandler*>::iterator i;
     for(i = handlerMap.begin();i != handlerMap.end();)
@@ -150,18 +152,20 @@ void TcpServer::disconnectClient(QString tcpClientIP, int tcpClientPort)
     // 删除handler
     if(handlerMap.contains(handler_key))
     {
-        TcpServerHandler *handler = handlerMap.value(handler_key);
+        TcpServerHandler *handler = handlerMap.value(handler_key);        
         // 断开客户端连接
-        handler->disconnectClient();
+        handler->disconnectClient();        
         // 删除信号槽连接
         handler->disconnect();
         // 释放资源
         delete handler;
         // 删除handler
         handlerMap.remove(handler_key);
+        // 发射某客户端断开连接信号
+        emit clientDisconnect(tcpClientIP, tcpClientPort);
     }
-}
 
+}
 
 // 重载incommintConnection， 生成handler，用来单独处理与每一个TcpClient的通信
 void TcpServer::incomingConnection(qintptr socketDescriptor)
@@ -177,15 +181,16 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
     // 加入handlerMap，handler池
     if(!handlerMap.contains(handler_key))
     {
-        handlerMap.insert(handler_key, handler);
+        handlerMap.insert(handler_key, handler);        
+        // 客户端主动断开信号
+        connect(handler, SIGNAL(clientDisconnect(QString, int)), this, SIGNAL(clientDisconnect(QString, int)));
         // 信号连接信号，发送收到消息信号，
-        //void receiveMessage(QString message, QString tcpClientIP, int tcpClientPort);
-        //void receiveByteArray(QByteArray byteArray, QString tcpClientIP, int tcpClientPort);
         connect(handler, SIGNAL(receiveString(QString, QString, int)), this, SIGNAL(receiveString(QString, QString, int)));
         connect(handler, SIGNAL(receiveByteArray(QByteArray, QString, int)), this, SIGNAL(receiveByteArray(QByteArray, QString, int)));
     }
 
-
+    // 发送某客户端连接信号
+    emit clientConnect(handler->peerAddress().toString(), handler->peerPort());
 }
 
 

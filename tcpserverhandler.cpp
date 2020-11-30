@@ -2,9 +2,10 @@
 #include <QHostAddress>
 
 TcpServerHandler::TcpServerHandler(QObject *parent) : QTcpSocket(parent)
-{
-    isHaveIPandPort = false;
+{    
     connect(this, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+    // 响应套接字状态变化
+    connect(this, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onStateChanged(QAbstractSocket::SocketState)));
 }
 
 // 发送QString消息
@@ -21,8 +22,18 @@ void TcpServerHandler::send(QByteArray byteArray)
 
 // 断开与客户端的连接
 void TcpServerHandler::disconnectClient()
-{
+{    
     this->disconnectFromHost();
+}
+
+// 响应套接字状态变换
+void TcpServerHandler::onStateChanged(QAbstractSocket::SocketState socketState)
+{
+    if(socketState == QAbstractSocket::UnconnectedState)
+    {
+        // 客户端主动断开连接
+        emit clientDisconnect(this->peerAddress().toString(), this->peerPort());
+    }
 }
 
 // 私有槽，用来响应readyRead信号，处理消息，发出receiveMessage信号和receiveByteArray信号
@@ -36,19 +47,11 @@ void TcpServerHandler::onReadyRead()
         this->read(datagram.data(), datagram.size());
         QString msg = datagram.data();
 
-        // 获取客户端ip和port
-        if(!isHaveIPandPort)
-        {
-            tcpClientIP = this->peerAddress().toString();
-            tcpClientPort = this->peerPort();
-            isHaveIPandPort = true;
-        }
-
         // 收到数据，发射信号
         // 信号，收到某客户端的消息 QByteArray格式, ip, port
-        emit receiveByteArray(datagram, tcpClientIP, tcpClientPort);
+        emit receiveByteArray(datagram, this->peerAddress().toString(), this->peerPort());
         // 信号，收到某客户端的消息 QString格式, ip, port
-        emit receiveString(msg, tcpClientIP, tcpClientPort);
+        emit receiveString(msg, this->peerAddress().toString(), this->peerPort());
 
     }
 }

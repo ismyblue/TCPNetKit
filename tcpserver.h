@@ -22,9 +22,9 @@ public:
     void setLocalPort(int LocalPort);
 
     // 开启本地服务器
-    void startServer();
+    bool startServer();
     // 开启本地服务器
-    void startServer(QString LocalIP, int LocalPort);
+    bool startServer(QString LocalIP, int LocalPort);
     // 停止服务器
     void stopServer();
 
@@ -41,6 +41,10 @@ public:
 
 
 signals:
+    // 信号，某客户端连接信号
+    void clientConnect(QString tcpClientIP, int tcpClientPort);
+    // 信号，某客户端断开连接信号
+    void clientDisconnect(QString tcpClientIP, int tcpClientPort);
     // 信号，收到某客户端的消息 QString格式
     void receiveString(QString message, QString tcpClientIP, int tcpClientPort);
     // 信号，收到某客户端的消息 QByteArray格式
@@ -51,8 +55,6 @@ private:
     QString localIP;
     // 监听端口
     int localPort;
-    // 监听状态
-    bool isListen;
 
     // “服务器处理套接字”字典, 字典中的每个套接字用来单独与客户端套接字通信
     QMap<QString, TcpServerHandler*> handlerMap;
