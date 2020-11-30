@@ -24,8 +24,18 @@ void TCPNetKit::initDialog()
 
     // TODO: Add extra initialization here
     //1.初始化变量,初始化服务端套接字和客户端套接字
-    socketServer = new TcpServer(this);
-    socketClient = new TcpClient(this);
+    tcpServer = new TcpServer(this);
+    tcpClient = new TcpClient(this);
+
+    // tcpServer的信号槽
+    connect(tcpServer, SIGNAL(clientConnect(QString, int)), this, SLOT(onClientConnect(QString, int)));
+    connect(tcpServer, SIGNAL(clientDisconnect(QString, int)), this, SLOT(onClientDisconnect(QString, int)));
+    connect(tcpServer, SIGNAL(receiveString(QString, QString, int)), this, SLOT(onServerReceiveString(QString, QString, int)));
+    // tcpClient的信号槽
+    connect(tcpClient, SIGNAL(receiveString(QString)), this, SLOT(onClientReceiveString(QString)));
+    connect(tcpClient, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onClientStateChanged(QAbstractSocket::SocketState)));
+
+
 
     //2.获取本机的IP和计算机名
     localName = getLocalHostName();
@@ -46,31 +56,54 @@ void TCPNetKit::initDialog()
     ui->tableWidget_ListConnections->horizontalHeader()->setFixedHeight(20);
     // 取消序号
     ui->tableWidget_ListConnections->verticalHeader()->setHidden(true);
-    ui->tableWidget_ListConnections->setRowCount(10);
-    int rowcount = ui->tableWidget_ListConnections->rowCount();
-    for(int i = 0;i < rowcount;i++)
-    {
-        QTableWidgetItem *number = new QTableWidgetItem();
-        QTableWidgetItem *address = new QTableWidgetItem();
-        number->setText(QString("%1").arg(i));
-        address->setText(QString("192.168.0.10%1").arg(i));
-        ui->tableWidget_ListConnections->setItem(i, 0, number);
-        ui->tableWidget_ListConnections->setItem(i, 1, address);
-        ui->tableWidget_ListConnections->setRowHeight(i, 20);
-    }
 
-    //5.状态变量: 服务端是否创建，客户端是否连接，当前是否选中传感器
-    isServerCreated = false;
+    //5.状态变量: 客户端是否连接
     isClientConnected = false;
 
+}
+
+// 删除某一个定时器
+void TCPNetKit::removeOneTimer(QString tcpClient_key)
+{
+    // 如果存在定时器，那么删除此定时器
+    if(timerMap.contains(tcpClient_key))
+    {
+        // 从定时器中删除
+        QTimer *timer = timerMap.value(tcpClient_key);
+        // 删除信号槽连接
+        timer->disconnect();
+        // 释放指针所指内存
+        delete timer;
+        // 定时器列表移出元素
+        timerMap.remove(tcpClient_key);
+    }
+}
+
+// 清空所有定时器
+void TCPNetKit::clearAllTimer()
+{
+    // 清空定时器
+    QMap<QString, QTimer*>::iterator iter;
+    for(iter = timerMap.begin();iter != timerMap.end();)
+    {
+        QString tcpClient_key = iter.key();
+        QTimer *timer = iter.value();
+        iter++;
+        // 删除信号槽连接
+        timer->disconnect();
+        // 释放指针所指内存
+        delete timer;
+        // 定时器列表移出元素
+        timerMap.remove(tcpClient_key);
+    }
 }
 
 // 析构函数，释放指针
 TCPNetKit::~TCPNetKit()
 {
     delete ui;
-    delete socketServer;
-    delete socketClient;
+    delete tcpServer;
+    delete tcpClient;
 }
 
 // 开始服务按钮 clicked信号响应槽
@@ -96,42 +129,37 @@ void TCPNetKit::on_pushButton_StartServer_clicked()
         return ;
     }
 
-    // 如果还没创建服务器
-    if(!isServerCreated)
+    // 如果服务器没有启动
+    if(!tcpServer->isListening())
     {
         // 创建并开启服务器套接字
         // todo...
-        // 如果创建失败
-        if(false)
+        // 如果监听失败
+        if(!tcpServer->startServer(localIP, localPort))
         {
-            QMessageBox::warning(this, tr("Fail"), tr("Server create failed"));
-            return ;
-        }
-        // 如果启动失败
-        if(false)
-        {
-            QMessageBox::information(this, tr("Fail"), tr("Server start failed"));
+            QMessageBox::warning(this, tr("Fail"), tr("Server listen failed"));
             return ;
         }
 
         // 修改按钮文本
         ui->pushButton_StartServer->setText(tr("关闭服务"));
-        // 重置服务器创建状态为已创建
-        isServerCreated = true;
+
     }
     // 如果已经创建了服务器
     else
     {
         // 关闭服务器套接字
-        // todo....
-        // socketServer->close();
+        // todo....        
+        tcpServer->stopServer();
+        // 清空定时器
+        clearAllTimer();
+
         // 修改按钮文本
         ui->pushButton_StartServer->setText(tr("开始服务"));
         // 清空传感器列表
         for(int i = ui->tableWidget_ListConnections->rowCount() - 1;i >=0;i--)
             ui->tableWidget_ListConnections->removeRow(i);
-        // 重置服务器创建状态为未创建
-        isServerCreated = false;
+
     }
 
 }
@@ -140,6 +168,7 @@ void TCPNetKit::on_pushButton_StartServer_clicked()
 // client连接按钮 clicked信号相应槽
 void TCPNetKit::on_pushButton_Connect_clicked()
 {
+    qDebug()<<"connect click" << isClientConnected;
     // 如果客户端未连接
     if(!isClientConnected)
     {
@@ -165,6 +194,7 @@ void TCPNetKit::on_pushButton_Connect_clicked()
 
         // 连接服务端
         // todo...
+        tcpClient->connectServer(remoteIP, remotePort);
         // 如果连接失败
         if(false)
         {
@@ -177,30 +207,24 @@ void TCPNetKit::on_pushButton_Connect_clicked()
             QMessageBox::warning(this, tr("Fail"), tr("receiving data failed!"));
             // 关闭客户端套接字
             // todo...
+            tcpClient->disconnectServer();
             return ;
         }
-
-        // 修改客户端连接状态为已连接
-        isClientConnected = true;
-        // 修改按钮文本
-        ui->pushButton_Connect->setText(tr("断开连接"));
-
-        // 更新客户端日志
-        QString status = remoteIP + "连接\r\n";
-        ui->textEdit_ClientLog->append(status);
+        qDebug()<<"finished connectSerer";
 
     }
     else
     {
-        // 客户端套接字断开连接
-        //        socketClient->close();
+        // 客户端套接字断开连接        
         // todo....
-        // 修改客户端连接状态为false
-        isClientConnected = false;
-        // 设置连接按钮文本为“连接”
-        ui->pushButton_Connect->setText(tr("连接"));
+        tcpClient->disconnectServer();
+qDebug()<<"finished disconnectServer";
+        // 由onStateChanged槽函数修改按钮文本
+//        // 设置连接按钮文本为“连接”
+//        ui->pushButton_Connect->setText(tr("连接"));
     }
 }
+
 
 // server发送数据按钮 clicked信号响应槽, 发送到消息是循环发送
 void TCPNetKit::on_pushButton_ServerSend_clicked()
@@ -216,11 +240,12 @@ void TCPNetKit::on_pushButton_ServerSend_clicked()
         return ;
     }
 
-    bool ok;
-    // 获取传感器id
-    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
-    // 获取传感器ip
-    QString sensorip = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+//    // 获取传感器id
+//    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
+    // 获取客户端ip
+    QString tcpClientIP = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+    // 获取客户端port
+    int tcpClientPort = ui->tableWidget_ListConnections->item(currentRow, 2)->text().toInt();
     // 获取要发送的信息
     QString message = ui->textEdit_ServerSend->toPlainText();
     if(message == "")
@@ -230,28 +255,18 @@ void TCPNetKit::on_pushButton_ServerSend_clicked()
     }
 
     // 计算传感器标识
-    QString sensor_key = QString("%1_%2").arg(sensorip).arg(sensorid);
+    QString tcpClient_key = QString("%1:%2").arg(tcpClientIP).arg(tcpClientPort);
 
-    // 如果存在定时器
-    QTimer *timer;
-    if(timerMap.contains(sensor_key)){
+    // 删除之前的定时器
+    removeOneTimer(tcpClient_key);
 
-        // 停止之前的定时器，
-        timer = timerMap.value(sensor_key);
-        // 删除所有信号槽连接
-        timer->disconnect();
-        timer->stop();
-    }
-    // 如果不存在定时器
-    else
-    {
-        // 新建定时器，发送消息
-        timer = new QTimer();
-        timerMap.insert(sensor_key, timer);
-    }
+    // 新建定时器，发送消息
+    QTimer *timer = new QTimer();
+    timerMap.insert(tcpClient_key, timer);
+
     // 连接信号槽
     connect(timer, &QTimer::timeout, this,
-            [=]()mutable { onSendMessageToClient(sensorid, sensorip, message); });
+            [=]()mutable { onSendMessageToClient(message, tcpClientIP, tcpClientPort); });
     // 启动定时器，定时发送消息
     timer->start(1000);
 
@@ -260,15 +275,15 @@ void TCPNetKit::on_pushButton_ServerSend_clicked()
 
 }
 
-// 发送消息到传感器
-void TCPNetKit::onSendMessageToClient(int sensorid, QString sensorip, QString message)
+// 发送消息到客户端
+void TCPNetKit::onSendMessageToClient(QString message, QString tcpClientIP, int tcpClientPort)
 {
     // todo...
-    // socketServer->send(sensorip, message);
+    tcpServer->send(message, tcpClientIP, tcpClientPort);
 
     // 更新服务器日志
-    QString sensor_key = QString("%1_%2").arg(sensorip).arg(sensorid);
-    ui->textEdit_ServerLog->append(QString("向%1发送:%2").arg(sensor_key).arg(message));
+//    onServerReceiveString(message, tcpClientIP, tcpClientPort);
+    ui->textEdit_ServerLog->append(QString("向%1:%2发送:%3").arg(tcpClientIP).arg(tcpClientPort).arg(message));
 
 }
 
@@ -284,26 +299,17 @@ void TCPNetKit::on_pushButton_CancerServerSend_clicked()
         return ;
     }
 
-    bool ok;
     // 获取传感器id
-    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
-    // 获取传感器ip
-    QString sensorip = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+//    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
+    // 获取客户端ip
+    QString tcpClientIP = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+    // 获取客户端port
+    int tcpClientPort = ui->tableWidget_ListConnections->item(currentRow, 2)->text().toInt();
     // 计算传感器标识
-    QString sensor_key = QString("%1_%2").arg(sensorip).arg(sensorid);
+    QString tcpClient_key = QString("%1:%2").arg(tcpClientIP).arg(tcpClientPort);
 
     // 如果存在定时器，那么删除此定时器
-    if(timerMap.contains(sensor_key))
-    {
-        // 从定时器中删除
-        QTimer *timer = timerMap.value(sensor_key);
-        // 删除信号槽连接
-        timer->disconnect();
-        // 释放指针所指内存
-        delete timer;
-        // 定时器列表移出元素
-        timerMap.remove(sensor_key);
-    }
+    removeOneTimer(tcpClient_key);
 
 }
 
@@ -320,40 +326,23 @@ void TCPNetKit::on_pushButton_ServerDisconnect_clicked()
         return ;
     }
 
-    bool ok;
     // 获取传感器id
-    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
-    // 获取传感器ip
-    QString sensorip = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+//    int sensorid = ui->tableWidget_ListConnections->item(currentRow, 0)->text().toInt(&ok);
+    // 获取客户端ip
+    QString tcpClientIP = ui->tableWidget_ListConnections->item(currentRow, 1)->text();
+    // 获取客户端port
+    int tcpClientPort = ui->tableWidget_ListConnections->item(currentRow, 2)->text().toInt();
     // 计算传感器标识
-    QString sensor_key = QString("%1_%2").arg(sensorip).arg(sensorid);
+    QString tcpClient_key = QString("%1:%2").arg(tcpClientIP).arg(tcpClientPort);
 
-    // 先删除这个向这个传感器发送消息的定时器，然后断开连接
-    // 如果存在定时器，那么删除此定时器
-    if(timerMap.contains(sensor_key))
-    {
-        // 从定时器中删除
-        QTimer *timer = timerMap.value(sensor_key);
-        // 删除信号槽连接
-        timer->disconnect();
-        // 释放指针所指内存
-        delete timer;
-        // 定时器列表移出元素
-        timerMap.remove(sensor_key);
-    }
 
     // 断开这个传感器的连接
     // todo...
-    // socketServer->disconnect(sensor_id, sensor_ip);
+    tcpServer->disconnectClient(tcpClientIP, tcpClientPort);
 
-    // 从传感器列表删除此传感器
-    ui->tableWidget_ListConnections->removeRow(currentRow);
 
     // 更新服务器日志
-    ui->textEdit_ServerLog->append(QString("手工断开%1的连接").arg(sensor_key));
-
-
-
+    ui->textEdit_ServerLog->append(QString("手工断开%1的连接").arg(tcpClient_key));
 
 }
 
@@ -369,40 +358,85 @@ void TCPNetKit::on_pushButton_ClientSend_clicked()
         if(message != "")
         {
             // 客户端套接字发送消息
-            // todo...
-            // socketClient->send(message);
+            // todo...            
+            tcpClient->send(message);
             // 更新客户端日志
             ui->textEdit_ClientLog->append(QString("向%1发送:%2").arg(remoteIP).arg(message));
-            // 清除消息框消息
-//            ui->textEdit_Send->clear();
         }
     }
 }
 
-
-// 服务器请求函数
-void TCPNetKit::onServerRequest()
+// 新连接一个客户端
+void TCPNetKit::onClientConnect(QString tcpClientIP, int tcpClientPort)
 {
+    int rowCount = ui->tableWidget_ListConnections->rowCount();
+    ui->tableWidget_ListConnections->insertRow(rowCount);
+    QTableWidgetItem *ip = new QTableWidgetItem();
+    QTableWidgetItem *port = new QTableWidgetItem();
+    ip->setText(tcpClientIP);
+    port->setText(QString::number(tcpClientPort));
+    ui->tableWidget_ListConnections->setItem(rowCount, 1, ip);
+    ui->tableWidget_ListConnections->setItem(rowCount, 2, port);
+    ui->tableWidget_ListConnections->setRowHeight(rowCount, 20);
 
 }
 
-// 服务器响应函数
-void TCPNetKit::onServerReply(int index)
+// 断开一个客户端
+void TCPNetKit::onClientDisconnect(QString tcpClientIP, int tcpClientPort)
 {
+    // 列表移除
+    for(int i=0;i < ui->tableWidget_ListConnections->rowCount();i++)
+    {
+        // 判断IP port,确定行
+        if(ui->tableWidget_ListConnections->item(i, 1)->text() == tcpClientIP
+                && ui->tableWidget_ListConnections->item(i, 2)->text().toInt() == tcpClientPort){
+            ui->tableWidget_ListConnections->removeRow(i);
+        }
+    }
+
+    // 移除定时器，取消定时发送消息
+    QString tcpClient_key = QString("%1:%2").arg(tcpClientIP).arg(tcpClientPort);
+    removeOneTimer(tcpClient_key);
 
 }
 
-// 数据处理函数
-void TCPNetKit::onDataHandle(QString data)
+// 客户端收到消息
+void TCPNetKit::onClientReceiveString(QString message)
 {
+    ui->textEdit_ClientLog->append(message);
+}
+
+// 响应服务端收到消息
+void TCPNetKit::onServerReceiveString(QString message, QString tcpClientIP, int tcpClientPort)
+{
+    ui->textEdit_ServerLog->append(QString("收到%1:%2信息:%3").arg(tcpClientIP).arg(tcpClientPort).arg(message));
+}
+
+// 响应客户端状态改变
+void TCPNetKit::onClientStateChanged(QAbstractSocket::SocketState socketState)
+{
+    // 套接字连接成功
+    if(QAbstractSocket::ConnectedState == socketState)
+    {
+        ui->pushButton_Connect->setText(QString("断开连接"));
+        // 更新客户端日志
+        QString status = remoteIP + "连接";
+        ui->textEdit_ClientLog->append(status);
+        isClientConnected = true;
+    }
+    else if(QAbstractSocket::UnconnectedState == socketState)
+    {
+        qDebug()<<" 客户端响应断开";
+        ui->pushButton_Connect->setText(QString("连接"));
+        isClientConnected = false;
+    }
+    else if(QAbstractSocket::ConnectingState == socketState)
+    {
+        ui->pushButton_Connect->setText(QString("连接中..."));
+    }
 
 }
 
-// 上传数据函数
-void TCPNetKit::onUploadData(QString device, QString data)
-{
-
-}
 
 // 获取本机ip
 QString TCPNetKit::getIPAddress(const QString &hostname)
