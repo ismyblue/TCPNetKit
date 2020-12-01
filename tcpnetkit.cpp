@@ -28,12 +28,12 @@ void TCPNetKit::initDialog()
     tcpClient = new TcpClient(this);
 
     // tcpServer的信号槽
-    connect(tcpServer, SIGNAL(clientConnect(QString, int)), this, SLOT(onClientConnect(QString, int)));
-    connect(tcpServer, SIGNAL(clientDisconnect(QString, int)), this, SLOT(onClientDisconnect(QString, int)));
-    connect(tcpServer, SIGNAL(receiveString(QString, QString, int)), this, SLOT(onServerReceiveString(QString, QString, int)));
+    connect(tcpServer, &TcpServer::clientConnect, this, &TCPNetKit::onClientConnect);
+    connect(tcpServer, &TcpServer::clientDisconnect, this, &TCPNetKit::onClientDisconnect);
+    connect(tcpServer, &TcpServer::receiveString, this, &TCPNetKit::onServerReceiveString);
     // tcpClient的信号槽
-    connect(tcpClient, SIGNAL(receiveString(QString)), this, SLOT(onClientReceiveString(QString)));
-    connect(tcpClient, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onClientStateChanged(QAbstractSocket::SocketState)));
+    connect(tcpClient, &TcpClient::receiveString, this, &TCPNetKit::onClientReceiveString);
+    connect(tcpClient, &TcpClient::stateChanged, this, &TCPNetKit::onClientStateChanged);
 
 
 

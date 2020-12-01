@@ -12,8 +12,8 @@ TcpClient::TcpClient(QObject *parent) : QTcpSocket(parent)
     // 设置服务器连接状态
     isConnected = false;
     // 连接信号槽
-    connect(this, SIGNAL(readyRead()), this, SLOT(slotsReadyRead()));
-    connect(this, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onClientStateChanged(QAbstractSocket::SocketState)));
+    connect(this, &TcpClient::readyRead, this, &TcpClient::onReadyRead);
+    connect(this, &TcpClient::stateChanged, this, &TcpClient::onClientStateChanged);
 }
 
 // 获取远程IP
@@ -109,7 +109,7 @@ void TcpClient::disconnectServer()
 }
 
 // 私有槽，响应准备读取消息信号，处理数据之后发送receiveString和receiveByteArray信号
-void TcpClient::slotsReadyRead()
+void TcpClient::onReadyRead()
 {
     while(this->bytesAvailable())
     {

@@ -183,10 +183,10 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
     {
         handlerMap.insert(handler_key, handler);        
         // 客户端主动断开信号
-        connect(handler, SIGNAL(clientDisconnect(QString, int)), this, SIGNAL(clientDisconnect(QString, int)));
+        connect(handler, &TcpServerHandler::clientDisconnect, this, &TcpServer::clientDisconnect);
         // 信号连接信号，发送收到消息信号，
-        connect(handler, SIGNAL(receiveString(QString, QString, int)), this, SIGNAL(receiveString(QString, QString, int)));
-        connect(handler, SIGNAL(receiveByteArray(QByteArray, QString, int)), this, SIGNAL(receiveByteArray(QByteArray, QString, int)));
+        connect(handler, &TcpServerHandler::receiveString, this, &TcpServer::receiveString);
+        connect(handler, &TcpServerHandler::receiveByteArray, this, &TcpServer::receiveByteArray);
     }
 
     // 发送某客户端连接信号
