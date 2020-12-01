@@ -38,7 +38,7 @@ signals:
 
 private slots:
     // 私有槽，响应准备读取消息信号，处理数据之后发送receiveString和receiveByteArray信号
-    void slotsReadyRead();    
+    void onReadyRead();
     // 响应状态改变，修改连接状态
     void onClientStateChanged(QAbstractSocket::SocketState socketState);
 

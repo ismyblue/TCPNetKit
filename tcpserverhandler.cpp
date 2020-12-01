@@ -3,9 +3,9 @@
 
 TcpServerHandler::TcpServerHandler(QObject *parent) : QTcpSocket(parent)
 {    
-    connect(this, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+    connect(this, &QTcpSocket::readyRead, this, &TcpServerHandler::onReadyRead);
     // 响应套接字状态变化
-    connect(this, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onStateChanged(QAbstractSocket::SocketState)));
+    connect(this, &QTcpSocket::stateChanged, this, &TcpServerHandler::onStateChanged);
 }
 
 // 发送QString消息

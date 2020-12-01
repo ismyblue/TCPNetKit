@@ -9,7 +9,7 @@ HttpClient::HttpClient(QObject *parent) : QNetworkAccessManager(parent)
     request.setRawHeader("Accept-Encoding", "gzip, deflate");
 
     // http 收到response信号槽
-    connect(this, SIGNAL(finished(QNetworkReply *)), this, SLOT(onFinished(QNetworkReply *)));
+    connect(this, &HttpClient::finished, this, &HttpClient::onFinished);
 }
 
 // 析构函数，释放指针
